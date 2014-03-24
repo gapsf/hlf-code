@@ -1,0 +1,23 @@
+# INET-GW via eth3
+# в уже установленном соединении  с шлюза входящие пакеты после nat PREROUTING будут
+# иметь src=$ETH_INET, а не $ETH_LAN2. это доп. правило для авт. созданных.
+# можно воспользоваться ipset когда он будет доступен и задать оба адреса в одном правиле.
+*filter
+-A INPUT -i eth3 ! -s 192.168.0.0/16 -d 198.51.100.2 -j 03_INET_GW_ISP2
+
+*mangle
+-A PREROUTING -i eth0 -s 192.168.0.0/24 ! -d 192.168.0.0/16 -j 05_LAN_INET_MARK
+-A PREROUTING -i ppp+ -s 192.168.1.0/24 ! -d 192.168.0.0/16 -j 05_LAN_INET_MARK
+-A PREROUTING -i eth2 -s $gv{"dmz_addr"} ! -d 192.168.0.0/16 -j 08_DMZ_INET_MARK
+
+-A OUTPUT -o eth1 -s $gv{eth1_addr} ! -d 192.168.0.0/16 -j 04_GW_INET_MARK
+# локальный трафик от squid
+-A OUTPUT -o eth0 -d 192.168.0.0/24 -m connmark --mark 0x3128 -m tos ! --tos 0x88 -j 06_INET_LAN
+-A OUTPUT -o ppp+ -d 192.168.1.0/24 -m connmark --mark 0x3128 -m tos ! --tos 0x88 -j 06_INET_LAN
+
+*nat
+# for redirect
+-A PREROUTING -i eth0 -s 192.168.0.0/24 ! -d 192.168.0.0/16 -j 05_LAN_INET_PRE
+-A PREROUTING -i ppp+ -s 192.168.1.0/24 ! -d 192.168.0.0/16 -j 05_LAN_INET_PRE
+#for SNAT
+-A POSTROUTING -j 05_LAN_INET_POST

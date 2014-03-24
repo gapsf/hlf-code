@@ -1,0 +1,6 @@
+#!/bin/sh
+
+modprobe nf_conntrack_ftp >/dev/null 2>&1
+modprobe nf_nat_ftp >/dev/null 2>&1
+modprobe ip_nat_pptp >/dev/null 2>&1
+modprobe ifb >/dev/null 2>&1

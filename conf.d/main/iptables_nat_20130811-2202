@@ -1,0 +1,22 @@
+Chain PREROUTING (policy ACCEPT )
+target     prot opt in     out     source               destination
+05_LAN_INET_PRE  all  --  eth0   *       192.168.0.0/24      !192.168.0.0/16
+05_LAN_INET_PRE  all  --  ppp+   *       192.168.1.0/24      !192.168.0.0/16
+
+Chain POSTROUTING (policy ACCEPT )
+target     prot opt in     out     source               destination
+05_LAN_INET_POST  all  --  *      *       0.0.0.0/0            0.0.0.0/0
+
+Chain OUTPUT (policy ACCEPT )
+target     prot opt in     out     source               destination
+
+Chain 05_LAN_INET_POST (1 references)
+target     prot opt in     out     source               destination
+SNAT       all  --  *      eth1   !203.0.113.0/29       0.0.0.0/0           to:198.51.100.2
+SNAT       all  --  *      eth3    0.0.0.0/0           !192.168.5.0/24      to:192.168.5.1
+
+Chain 05_LAN_INET_PRE (2 references)
+target     prot opt in     out     source               destination
+RETURN     all  --  *      *       192.168.1.1          0.0.0.0/0
+RETURN     all  --  *      *       0.0.0.0/0            203.0.113.0/29
+REDIRECT   tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp dpt:80 redir ports 3129

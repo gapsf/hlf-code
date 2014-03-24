@@ -1,0 +1,22 @@
+#!/bin/sh
+
+SELF_PATH=`dirname "$0"`; SELF_PATH=`(cd "$SELF_PATH" && pwd)` # узнаем путь к этому скрипту
+
+if [ -n "$1" ]; then
+    CONF=$1
+else
+    CONF="default"
+fi
+if [ -d "$SELF_PATH/conf.d/$CONF" ]; then
+    if [ -e "$SELF_PATH/conf.d/$CONF/start" ]; then
+	echo "Setting up firewall using \"$CONF\" profile:"
+	$SELF_PATH/conf.d/$CONF/start
+	exit $?
+    else
+	echo "There is no start script in '$SELF_PATH/conf.d/$CONF'"
+	exit 1
+    fi
+else
+    echo "There is no configuration dir '$SELF_PATH/conf.d/$CONF'"
+    exit 1
+fi

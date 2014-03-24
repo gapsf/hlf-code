@@ -1,0 +1,13 @@
+#!/bin/sh
+
+SELF_PATH=`dirname "$0"`; SELF_PATH=`(cd "$SELF_PATH" && pwd)` # узнаем путь к этому скрипту
+
+if [ -e $SELF_PATH/conf/via_isp.conf ]; then
+    . $SELF_PATH/conf/via_isp.conf
+fi
+
+if [ "$VIA_ISP" == "isp1" ]; then
+    $SELF_PATH/via_isp1
+else
+    $SELF_PATH/via_isp2
+fi

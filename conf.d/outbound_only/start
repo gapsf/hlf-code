@@ -1,0 +1,9 @@
+#!/bin/sh
+
+SELF_PATH=`dirname "$0"`; SELF_PATH=`(cd "$SELF_PATH" && pwd)` # узнаем путь к этому скрипту
+
+$SELF_PATH/../../modules/init DROP
+
+echo "Allow outbound traffic only..."
+(cat $SELF_PATH/rules
+ echo "COMMIT") | iptables-restore

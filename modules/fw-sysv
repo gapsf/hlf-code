@@ -1,0 +1,29 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          firewall-gw
+# Required-Start:    $network
+# Required-Stop:     $network
+# Default-Start:     S
+# Default-Stop:      0 6
+# Short-Description: firewall-gw
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+SELF_PATH=`dirname $(readlink -f "$0")`; SELF_PATH=`(cd "$SELF_PATH" && pwd)` # узнаем путь к этому скрипту
+
+case $1 in
+    start | restart)
+	$SELF_PATH/../start
+	;;
+    stop)
+	$SELF_PATH/../start outbound_only
+	;;
+    reload | force-reload)
+	$SELF_PATH/../start
+	;;
+	*)
+		log_success_msg "Usage: $0 {start|stop|restart|reload|force-reload}"
+		exit 1
+	;;
+esac

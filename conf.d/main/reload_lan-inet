@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+use strict;
+BEGIN { # этой конструкцией определяем путь к скрипту, в том числе на этапе компиляции,
+        # делаем путь доступным глобально в скрипте, добавляем путь к библиотеке
+    use File::Basename; use Cwd 'abs_path';
+    use vars '$self_path'; $self_path=dirname(abs_path("$0")); push @INC, "$self_path/../../modules";
+}
+use firewall;
+
+umask 0077; # для безопасности
+select STDERR; $| = 1; # make unbuffered
+select STDOUT; $| = 1; # make unbuffered
+
+# Хотя при удалении настройки скорости и не происходит удаления класса, скорость не ограничивается
+# за счет того, что трафик больше не классифицируется. Соответствующий класс можно удалить полным
+# перезапуском или надо сравнивать текущее состояние с настройкой.
+our $cfg_name  = "main";
+our $mod_path  = "$self_path/../../modules";
+our $conf_path = "$self_path/conf";
+
+exit 1 if check_confs("$conf_path");
+exit 1 if init($cfg_name,"$conf_path/networks.conf");
+exit 1 if flow("$conf_path/lan.conf",
+                [["lan",undef,undef,"inet"],["inet",undef,undef,"lan"],
+                 ["vpn",undef,undef,"inet"],["inet",undef,undef,"vpn"]]);
+exit 1 if add_rules_from_file("$conf_path/rules_nat_redirect");
+finalize;
+exit 1 if load_rules('noflush');
+load_tc_rules();
+

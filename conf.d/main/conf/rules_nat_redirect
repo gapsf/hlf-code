@@ -1,0 +1,11 @@
+*nat
+:05_LAN_INET_PRE - [0:0]
+
+# excludes
+-A 05_LAN_INET_PRE -s 192.168.1.1       -j RETURN
+
+# skip DMZ
+-A 05_LAN_INET_PRE -d 203.0.113.0/29 -j RETURN
+
+# 2 squid
+-A 05_LAN_INET_PRE -p tcp --dport 80 -j REDIRECT --to-port 3129

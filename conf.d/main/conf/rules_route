@@ -1,0 +1,50 @@
+*mangle
+# policy routing setup
+
+# LAN-INET routing via eth3
+#:05_LAN_INET_MARK - [0:0]
+#-A PREROUTING -i eth0 -s 192.168.0.0/24 ! -d 192.168.0.0/16 -j 05_LAN_INET_MARK
+#-A PREROUTING -i ppp+ -s 192.168.1.0/24 ! -d 192.168.0.0/16 -j 05_LAN_INET_MARK
+
+# exceptions
+# ISP1 glue network
+-A 05_LAN_INET_MARK -d 198.51.100.0/30 -j RETURN
+
+# user via ISP1
+-A 05_LAN_INET_MARK -s 192.168.1.3 -j RETURN
+
+# dmz
+-A 05_LAN_INET_MARK -d $gv{"dmz_addr"} -j RETURN
+
+# openvpn
+-A 05_LAN_INET_MARK -d 192.168.255.0/24 -j RETURN
+
+# rdp
+-A 05_LAN_INET_MARK -p tcp --dport 3389 -m state --state NEW -j CONNMARK --set-mark 0x3389
+-A 05_LAN_INET_MARK -p tcp -m connmark --mark 0x3389 -j RETURN
+
+# mark traffic
+-A 05_LAN_INET_MARK -m state --state NEW -j CONNMARK --set-mark 0x0400
+-A 05_LAN_INET_MARK -m connmark --mark 0x0400 -j MARK --set-mark 0x4
+
+# GW-INET routing via eth3
+#:04_GW_INET_MARK - [0:0] # manual
+#-A OUTPUT -o eth1 -j 04_GW_INET_MARK
+
+# outgouing smtp session via ISP1
+-A 04_GW_INET_MARK -p tcp --dport 25 -m state --state NEW -j RETURN
+
+# outgouing DNS queries via ISP1
+-A 04_GW_INET_MARK -p tcp --dport 53 -m state --state NEW -j RETURN
+-A 04_GW_INET_MARK -p udp --dport 53 -m state --state NEW -j RETURN
+
+# other outgouing traffic via ISP2
+-A 04_GW_INET_MARK -m state --state NEW -j CONNMARK --set-mark 0x0500
+-A 04_GW_INET_MARK -m connmark --mark 0x0500 -j MARK --set-mark 0x4
+-A POSTROUTING -o eth3 -s 198.51.100.2 -j CONNMARK --set-mark 0x0500
+
+# DMZ->INET routing via eth3
+#:08_DMZ_INET_MARK - [0:0]
+#-A PREROUTING -i eth2 -s $gv{"dmz_addr"} ! -d 192.168.0.0/16 -j 08_DMZ_INET_MARK
+-A 08_DMZ_INET_MARK -m state --state NEW -j CONNMARK --set-mark 0x800
+-A 08_DMZ_INET_MARK -m connmark --mark 0x0800 -j MARK --set-mark 0x4

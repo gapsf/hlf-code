@@ -1,0 +1,23 @@
+#!/bin/sh
+
+wait_dns()
+{
+    # Wait if ADSL is not up and DNS not available
+    echo -en "Checking for DNS server availability..."
+    PING=1
+    COUNT=0
+    for COUNT in {1..60}
+    do
+        nc -c exit -w1 198.51.100.25 53 >/dev/null 2>&1
+        PING=$?
+        if [ "$PING" == "0" ]; then
+		echo "DNS ping Ok"
+		return
+        fi
+        echo -en "\rWaiting for DNS server availability (max 60s): $COUNT"
+#        sleep 1
+    done
+    echo -e "\nDNS ping FAILED: check rules with DNS names"
+}
+
+wait_dns

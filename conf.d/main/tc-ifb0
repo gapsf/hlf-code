@@ -1,0 +1,109 @@
+#!/bin/sh
+
+echo "Setting up tc for ifb0..."
+ISP1_RATE=512000 # bit/s
+ISP1_LAN_RATE=412000 # bit/s
+ISP1_LAN_PRIO0_RATE=200000 # bit/s
+ISP1_LAN_PRIO1_RATE=200000 # bit/s
+ISP1_LAN_PRIO2_RATE=12000 # bit/s
+
+ISP1_DMZ_RATE=100000 # bit/s
+ISP1_DMZ_PRIO0_RATE=44000 # bit/s
+ISP1_DMZ_PRIO1_RATE=44000 # bit/s
+ISP1_DMZ_PRIO2_RATE=12000 # bit/s
+
+ISP2_RATE=10240000 # bit/s
+ISP2_LAN_RATE=8192000 # bit/s
+ISP2_LAN_PRIO0_RATE=4090000 # bit/s
+ISP2_LAN_PRIO1_RATE=4090000 # bit/s
+ISP2_LAN_PRIO2_RATE=12000 # bit/s
+
+ISP2_DMZ_RATE=2048000 # bit/s
+ISP2_DMZ_PRIO0_RATE=1018000 # bit/s
+ISP2_DMZ_PRIO1_RATE=1018000 # bit/s
+ISP2_DMZ_PRIO2_RATE=12000 # bit/s
+
+if [ -n "$1" ]; then
+    ISP2_LAN_PRIO0_RATE=$[$ISP2_LAN_PRIO0_RATE - $1/2]
+    ISP2_LAN_PRIO1_RATE=$[$ISP2_LAN_PRIO1_RATE - $1/2]
+fi
+
+echo LAN rate: $ISP2_LAN_RATE
+echo "   LAN hosts rate: $1"
+echo "   LAN prio0 rate: $ISP2_LAN_PRIO0_RATE"
+echo "   LAN prio1 rate: $ISP2_LAN_PRIO1_RATE"
+echo "   LAN prio2 rate: $ISP2_LAN_PRIO2_RATE"
+echo DMZ rate: $ISP2_DMZ_RATE
+
+### IFB0 ######################################################################
+ifconfig ifb0 up
+
+tc qdisc del dev ifb0 root >/dev/null 2>&1
+tc qdisc del dev ifb0 ingress > /dev/null 2>&1
+
+# "default 0" - неклассифицированный трафик проходит на скорости железа в обход ограничений
+# т.е. трафик от GW->LAN по умолчанию без ограничений
+tc qdisc add dev ifb0 root handle 4:0 htb default 0 r2q 2
+### level 0 root class #######################################################
+  # ISP1 link
+  tc class add dev ifb0 parent 4:0 classid 4:1 htb rate $ISP1_RATE ceil $ISP1_RATE quantum 1540
+  # ISP2 link
+  tc class add dev ifb0 parent 4:0 classid 4:2 htb rate $ISP2_RATE ceil $ISP2_RATE quantum 1540
+
+### ISP1 link ##################################################################
+    ### level 1 ################################################################
+    # LAN via ISP1
+    tc class replace dev ifb0 parent 4:1 classid 4:10 htb rate $ISP1_LAN_RATE ceil $ISP1_RATE quantum 1540
+        ### level 2 ############################################################
+        # priority 0: ACK, RDP, DNS...
+        tc class replace dev ifb0 parent 4:10 classid 4:11 htb rate $ISP1_LAN_PRIO0_RATE ceil $ISP1_RATE prio 2 quantum 1540
+        tc qdisc replace dev ifb0 parent 4:11 sfq perturb 10
+        # priority 1: HTTP,FTP...
+        tc class replace dev ifb0 parent 4:10 classid 4:12 htb rate $ISP1_LAN_PRIO1_RATE ceil $ISP1_RATE prio 3 quantum 1540
+        tc qdisc replace dev ifb0 parent 4:12 sfq perturb 10
+        # priority 2: other...
+        tc class replace dev ifb0 parent 4:10 classid 4:13 htb rate $ISP1_LAN_PRIO2_RATE ceil $ISP1_RATE prio 4 quantum 1540
+        tc qdisc replace dev ifb0 parent 4:13 sfq perturb 10
+
+    ### level 1 #################################################################
+    # DMZ via ISP2
+    tc class replace dev ifb0 parent 4:1 classid 4:18 htb rate $ISP1_DMZ_RATE ceil $ISP1_RATE quantum 1540
+        ### level 2 #############################################################
+        # priority 0: ACK, RDP, DNS...
+        tc class replace dev ifb0 parent 4:18 classid 4:19 htb rate $ISP1_DMZ_PRIO0_RATE ceil $ISP1_RATE prio 2 quantum 1540
+        tc qdisc replace dev ifb0 parent 4:19 sfq perturb 10
+        # priority 1: HTTP,FTP...
+        tc class replace dev ifb0 parent 4:18 classid 4:1a htb rate $ISP1_DMZ_PRIO1_RATE ceil $ISP1_RATE prio 3 quantum 1540
+        tc qdisc replace dev ifb0 parent 4:1a sfq perturb 10
+        # priority 2: other...
+        tc class replace dev ifb0 parent 4:18 classid 4:1b htb rate $ISP1_DMZ_PRIO2_RATE ceil $ISP1_RATE prio 4 quantum 1540
+        tc qdisc replace dev ifb0 parent 4:1b sfq perturb 10
+
+### ISP2 link ##################################################################
+    ### level 1 ################################################################
+    # LAN via ISP2
+    tc class replace dev ifb0 parent 4:2 classid 4:20 htb rate $ISP2_LAN_RATE ceil $ISP2_RATE quantum 1540
+        ### level 2 ############################################################
+        # priority 0: ACK, RDP, DNS...
+        tc class replace dev ifb0 parent 4:20 classid 4:21 htb rate $ISP2_LAN_PRIO0_RATE ceil $ISP2_RATE prio 2 quantum 1540
+        tc qdisc replace dev ifb0 parent 4:21 sfq perturb 10
+        # priority 1: HTTP,FTP...
+        tc class replace dev ifb0 parent 4:20 classid 4:22 htb rate $ISP2_LAN_PRIO1_RATE ceil $ISP2_RATE prio 3 quantum 1540
+        tc qdisc replace dev ifb0 parent 4:22 sfq perturb 10
+        # priority 2: other...
+        tc class replace dev ifb0 parent 4:20 classid 4:23 htb rate $ISP2_LAN_PRIO2_RATE ceil 2048kbit prio 4 quantum 1540
+        tc qdisc replace dev ifb0 parent 4:23 sfq perturb 10
+
+    ### level 1 #################################################################
+    # DMZ via ISP2
+    tc class replace dev ifb0 parent 4:2 classid 4:28 htb rate $ISP2_DMZ_RATE ceil $ISP2_RATE quantum 1540
+        ### level 2 #############################################################
+        # priority 0: ACK, RDP, DNS...
+        tc class replace dev ifb0 parent 4:28 classid 4:29 htb rate $ISP2_DMZ_PRIO0_RATE ceil $ISP2_RATE prio 2 quantum 1540
+        tc qdisc replace dev ifb0 parent 4:29 sfq perturb 10
+        # priority 1: HTTP,FTP...
+        tc class replace dev ifb0 parent 4:28 classid 4:2a htb rate $ISP2_DMZ_PRIO1_RATE ceil $ISP2_RATE prio 3 quantum 1540
+        tc qdisc replace dev ifb0 parent 4:2a sfq perturb 10
+        # priority 2: other...
+        tc class replace dev ifb0 parent 4:28 classid 4:2b htb rate $ISP2_DMZ_PRIO2_RATE ceil $ISP2_DMZ_RATE prio 4 quantum 1540
+        tc qdisc replace dev ifb0 parent 4:2b sfq perturb 10

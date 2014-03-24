@@ -1,0 +1,18 @@
+#!/bin/bash
+
+SELF_PATH=`dirname "$0"`; SELF_PATH=`(cd "$SELF_PATH" && pwd)` # узнаем путь к этому скрипту
+
+CNT_DIR=/var/log/ip_counters
+FILENAME=`/bin/date +%Y%m%d-%H%M`
+YYYYMMDD=${FILENAME:0:8}
+
+save_counters()
+{
+    CNT_CHAIN=$1; FLOW=$2;
+    WHERE=$CNT_DIR/$FLOW/$YYYYMMDD
+    if [ ! -d $WHERE ]; then
+        mkdir -p $WHERE
+    fi
+    iptables -nvxL $CNT_CHAIN > $WHERE/${FLOW}_$FILENAME
+}
+

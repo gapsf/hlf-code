@@ -1,0 +1,8 @@
+*nat
+:05_LAN_INET_POST - [0:0]
+
+# SNAT LAN-INET and GW-INET via eth1
+-A 05_LAN_INET_POST -o eth1 ! -s $gv{"dmz_addr"}  -j SNAT --to-source $gv{"eth1_addr"}
+
+# for traffic with src 198.51.100.2 routed via policy routing
+-A 05_LAN_INET_POST -o eth3 ! -d $gv{"lan2_addr"} -j SNAT --to-source $gv{"eth3_addr"}

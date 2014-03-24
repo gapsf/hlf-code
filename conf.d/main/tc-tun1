@@ -1,0 +1,10 @@
+#!/bin/sh
+
+echo ""
+echo "Setting up tc for tun1..."
+
+### tun1 ######################################################################
+tc qdisc del dev tun1 root >/dev/null 2>&1
+tc qdisc del dev tun1 ingress > /dev/null 2>&1
+tc qdisc add dev tun1 root handle 1: prio
+tc filter add dev tun1 parent 1: protocol ip u32 match u32 0 0 action mirred egress redirect dev ifb0

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+echo "Setting up routing via ISP1..."
+
+# simply delete marked packets routing
+ip rule del from all fwmark 0x4 table inet2 >/dev/null 2>&1
+
+ip route flush cache

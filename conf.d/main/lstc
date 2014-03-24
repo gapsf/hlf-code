@@ -1,0 +1,13 @@
+#!/bin/sh
+
+DATE=`/bin/date +%Y%m%d-%H%M`
+
+tc qdisc show dev ifb0 | sort > tc_ifb0_$DATE
+tc class show dev ifb0 | sort >> tc_ifb0_$DATE
+tc qdisc show dev ifb1 | sort > tc_ifb1_$DATE
+tc class show dev ifb1 | sort >> tc_ifb1_$DATE
+tc qdisc show dev eth0 > tc_eth0_$DATE
+tc class show dev eth0 >> tc_eth0_$DATE
+tc qdisc show dev eth2 > tc_eth2_$DATE
+tc class show dev eth2 >> tc_eth2_$DATE
+

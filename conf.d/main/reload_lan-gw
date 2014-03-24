@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+use strict;
+BEGIN { # этой конструкцией определяем путь к скрипту, в том числе на этапе компиляции,
+        # делаем путь доступным глобально в скрипте, добавляем путь к библиотеке
+    use File::Basename; use Cwd 'abs_path';
+    use vars '$self_path'; $self_path=dirname(abs_path("$0")); push @INC, "$self_path/../../modules";
+}
+use firewall;
+
+umask 0077; # для безопасности
+select STDERR; $| = 1; # make unbuffered
+select STDOUT; $| = 1; # make unbuffered
+
+our $cfg_name  = "main";
+our $mod_path  = "$self_path/../../modules";
+our $conf_path = "$self_path/conf";
+
+exit 1 if check_confs("$conf_path");
+exit 1 if init($cfg_name,"$conf_path/networks.conf");
+exit 1 if flow("$conf_path/gw.conf",[["lan",undef,undef,"gw"],["gw",undef,undef,"lan"]]);
+finalize;
+load_rules('noflush');

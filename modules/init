@@ -1,0 +1,24 @@
+#!/bin/sh
+
+if [ -n "$1" ]; then
+    POLICY=$1
+else
+    POLICY=DROP
+fi
+
+echo "Init firewall:"
+# deny all
+echo "  Flushing all chains ..."
+iptables -t raw    -F
+iptables -t nat    -F
+iptables -t mangle -F
+iptables -t filter -F
+echo "  Deleting all user chains ..."
+iptables -t raw    -X
+iptables -t nat    -X
+iptables -t mangle -X
+iptables -t filter -X
+echo "  Setting up filter default chain policy to $POLICY ..."
+iptables -P INPUT $POLICY
+iptables -P FORWARD $POLICY
+iptables -P OUTPUT $POLICY

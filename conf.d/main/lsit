@@ -1,0 +1,8 @@
+#!/bin/sh
+
+DATE=`/bin/date +%Y%m%d-%H%M`
+
+iptables -nvL -t filter > iptables_filter_$DATE
+iptables -nvL -t mangle > iptables_mangle_$DATE
+iptables -nvL -t nat    > iptables_nat_$DATE
+

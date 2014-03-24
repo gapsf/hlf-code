@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+use strict;
+BEGIN { # этой конструкцией определяем путь к скрипту, в том числе на этапе компиляции,
+        # делаем путь доступным глобально в скрипте, добавляем путь к библиотеке
+    use File::Basename; use Cwd 'abs_path';
+    use vars '$self_path'; $self_path=dirname(abs_path("$0")); push @INC, "$self_path/../../modules";
+}
+use firewall;
+
+umask 0077; # для безопасности
+select STDERR; $| = 1; # make unbuffered
+select STDOUT; $| = 1; # make unbuffered
+
+our $cfg_name  = "main";
+our $mod_path  = "$self_path/../../modules";
+our $conf_path = "$self_path/conf";
+
+print "Setting up routing...\n";
+
+exit 1 if init($cfg_name,"$conf_path/networks.conf");
+gen('mangle',':05_LAN_INET_MARK - [0:0]');
+gen('mangle',':04_GW_INET_MARK - [0:0]');
+gen('mangle',':08_DMZ_INET_MARK - [0:0]');
+gen('mangle','-F POSTROUTING');
+exit 1 if load_rules('noflush');
+exit 1 if load_rules_from_file("$conf_path/rules_route");
+system("ip route flush cache");

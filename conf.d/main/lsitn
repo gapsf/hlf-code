@@ -1,0 +1,26 @@
+#!/bin/sh
+
+DATE=`/bin/date +%Y%m%d-%H%M`
+
+filterit()
+{
+  sed -r -e s/[a-z\ ]+target/target/g \
+         -e s/^[0-9\ KMGT]{12}//g \
+         -e s/[0-9KMGT]+\ *packets,\ *[0-9KMGT]+\ bytes//g $1
+}
+
+padit()
+{
+  sed -e :a -e 's/^.\{1,132\}$/& /;ta' $1
+}
+
+trimit()
+{
+  sed -e 's/[[:space:]]*$//' $1
+}
+
+iptables -nvL -t filter | filterit | trimit > iptables_filter_$DATE
+iptables -nvL -t mangle | filterit | trimit > iptables_mangle_$DATE
+iptables -nvL -t nat    | filterit | trimit > iptables_nat_$DATE
+#iptables -nvL -t raw    | filterit > iptables_raw_$DATE
+

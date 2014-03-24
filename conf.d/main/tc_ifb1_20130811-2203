@@ -1,0 +1,31 @@
+qdisc htb 6: root refcnt 2 r2q 2 default 0 direct_packets_stat 0
+qdisc sfq 8025: parent 6:11 limit 127p quantum 1514b perturb 10sec 
+qdisc sfq 8026: parent 6:12 limit 127p quantum 1514b perturb 10sec 
+qdisc sfq 8027: parent 6:13 limit 127p quantum 1514b perturb 10sec 
+qdisc sfq 8028: parent 6:19 limit 127p quantum 1514b perturb 10sec 
+qdisc sfq 8029: parent 6:1a limit 127p quantum 1514b perturb 10sec 
+qdisc sfq 802a: parent 6:1b limit 127p quantum 1514b perturb 10sec 
+qdisc sfq 802b: parent 6:21 limit 127p quantum 1514b perturb 10sec 
+qdisc sfq 802c: parent 6:22 limit 127p quantum 1514b perturb 10sec 
+qdisc sfq 802d: parent 6:23 limit 127p quantum 1514b perturb 10sec 
+qdisc sfq 802e: parent 6:29 limit 127p quantum 1514b perturb 10sec 
+qdisc sfq 802f: parent 6:2a limit 127p quantum 1514b perturb 10sec 
+qdisc sfq 8030: parent 6:2b limit 127p quantum 1514b perturb 10sec 
+class htb 6:10 parent 6:1 rate 412000bit ceil 512000bit burst 1599b cburst 1600b 
+class htb 6:11 parent 6:10 leaf 8025: prio 2 rate 200000bit ceil 512000bit burst 1599b cburst 1600b 
+class htb 6:12 parent 6:10 leaf 8026: prio 3 rate 200000bit ceil 512000bit burst 1599b cburst 1600b 
+class htb 6:13 parent 6:10 leaf 8027: prio 4 rate 12000bit ceil 512000bit burst 1599b cburst 1600b 
+class htb 6:18 parent 6:1 rate 100000bit ceil 512000bit burst 1599b cburst 1600b 
+class htb 6:19 parent 6:18 leaf 8028: prio 2 rate 44000bit ceil 512000bit burst 1599b cburst 1600b 
+class htb 6:1a parent 6:18 leaf 8029: prio 3 rate 44000bit ceil 512000bit burst 1599b cburst 1600b 
+class htb 6:1b parent 6:18 leaf 802a: prio 4 rate 12000bit ceil 512000bit burst 1599b cburst 1600b 
+class htb 6:1 root rate 512000bit ceil 512000bit burst 1600b cburst 1600b 
+class htb 6:20 parent 6:2 rate 8192Kbit ceil 10240Kbit burst 1598b cburst 1598b 
+class htb 6:21 parent 6:20 leaf 802b: prio 2 rate 4090Kbit ceil 10240Kbit burst 1599b cburst 1598b 
+class htb 6:22 parent 6:20 leaf 802c: prio 3 rate 4090Kbit ceil 10240Kbit burst 1599b cburst 1598b 
+class htb 6:23 parent 6:20 leaf 802d: prio 4 rate 12000bit ceil 10240Kbit burst 1599b cburst 1598b 
+class htb 6:28 parent 6:2 rate 2048Kbit ceil 10240Kbit burst 1599b cburst 1598b 
+class htb 6:29 parent 6:28 leaf 802e: prio 2 rate 1018Kbit ceil 10240Kbit burst 1599b cburst 1598b 
+class htb 6:2a parent 6:28 leaf 802f: prio 3 rate 1018Kbit ceil 10240Kbit burst 1599b cburst 1598b 
+class htb 6:2b parent 6:28 leaf 8030: prio 4 rate 12000bit ceil 10240Kbit burst 1599b cburst 1598b 
+class htb 6:2 root rate 10240Kbit ceil 10240Kbit burst 1598b cburst 1598b 

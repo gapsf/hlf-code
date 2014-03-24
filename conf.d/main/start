@@ -1,0 +1,44 @@
+#!/usr/bin/perl
+use strict;
+BEGIN { # этой конструкцией определяем путь к скрипту, в том числе на этапе компиляции,
+        # делаем путь доступным глобально в скрипте, добавляем путь к библиотеке
+    use File::Basename; use Cwd 'abs_path';
+    use vars '$self_path'; $self_path=dirname(abs_path("$0")); push @INC, "$self_path/../../modules";
+}
+use firewall;
+
+umask 0077; # для безопасности
+select STDERR; $| = 1; # make unbuffered
+select STDOUT; $| = 1; # make unbuffered
+
+our $cfg_name  = "main";
+our $mod_path  = "$self_path/../../modules";
+our $conf_path = "$self_path/conf";
+$firewall::gv{'lan_host_rates'} = 0; # kbit
+
+exit 1 if check_confs("$conf_path");
+exit 1 if init($cfg_name,"$conf_path/networks.conf");
+system("$self_path/../outbound_only/start") if $ARGV[0] ne "restart"; # allow outbound traffic only for DNS resolving
+system("$mod_path/wait_dns");
+system("$mod_path/load_modules");
+system("$self_path/sysctl");
+system("$self_path/via_isp"); # setting up policy routing
+exit 1 if flow("$conf_path/gw.conf");
+exit 1 if flow("$conf_path/lan.conf");
+exit 1 if flow("$conf_path/dmz.conf");
+exit 1 if add_rules_from_file("$conf_path/rules_nat_redirect");
+exit 1 if add_rules_from_file("$conf_path/rules_nat_snat");
+exit 1 if add_rules_from_file("$conf_path/rules_route");
+gen_main_rules;
+exit 1 if add_rules_from_file("$conf_path/rules_main_extra");
+print "Close chains...\n";
+finalize;
+exit 1 if load_rules('flash','/tmp/fw-nf-full');
+system("$self_path/tc-ifb0",$firewall::gv{'lan_host_rates'});
+system("$self_path/tc-eth0");
+system("$self_path/tc-eth2");
+system("$self_path/tc-ifb1");
+system("$self_path/tc-eth1");
+system("$self_path/tc-eth3");
+load_tc_rules();
+generate_save_counters("$mod_path/save_counters","$self_path/var/save_counters");

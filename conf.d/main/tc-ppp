@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Redirect traffic from ppp+ to ifb0
+if [ -n "$PPP_IFACE" ]; then
+    tc qdisc del dev $PPP_IFACE root > /dev/null
+    tc qdisc del dev $PPP_IFACE ingress > /dev/null
+    tc qdisc add dev $PPP_IFACE root handle 1: prio
+    tc filter add dev $PPP_IFACE parent 1: protocol ip u32 match u32 0 0 action mirred egress redirect dev ifb0
+fi

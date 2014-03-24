@@ -1,0 +1,10 @@
+#!/bin/sh
+
+echo "Setting up tc for eth1..."
+
+### LAN ######################################################################
+# redirect 2 ifb1
+tc qdisc del dev eth1 root >/dev/null 2>&1
+tc qdisc del dev eth1 ingress > /dev/null 2>&1
+tc qdisc add dev eth1 root handle 1: prio
+tc filter add dev eth1 parent 1: protocol ip u32 match u32 0 0 action mirred egress redirect dev ifb1
